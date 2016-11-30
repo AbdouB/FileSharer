@@ -1,9 +1,7 @@
 doctype html
-
 html
   include includes/head.pug
-
-  body(style={background: 'url(/images/bg.jpg)'})
+  body
     div.container-fluid
       if status === 'success'
         <div class="alert alert-success alert-dismissible" role="alert">
@@ -15,7 +13,7 @@ html
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         =message
         </div>
-      div.centering
+      div.centered
         div.row-fluid
           form(method='POST', action='/upload', encType='multipart/form-data')
             div.col-md-4
@@ -23,7 +21,11 @@ html
               label.control-label= 'Upload a file'
               input.file(type='file', name="uploadedFile")
             div.col-md-4
+      div.bottom
+       div.row
+        div.col-md-12= 'fileSharer! made in a hurry by Abdelilah Benhima'
 
     script(src='/js/jquery-3.1.1.min.js')
     script(src='/js/bootstrap.js')
     script(src='/js/fileinput.min.js')
+    script(src='/js/site.js')

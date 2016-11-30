@@ -39,7 +39,7 @@ app.get('/file/:id', function(req, res){
         res.sendFile(filePath);
     } else if(err.code == 'ENOENT') {
         // file does not exist
-        res.status(404).send('Fichier inexistant');
+        res.status(404).render('404');
     } else {
         res.redirect('back');
     }
@@ -73,5 +73,7 @@ app.post('/upload', function(req, res){
 
 });
 
-
+app.use('*', function(req, res){
+  res.render('404')
+})
 app.listen(3000);
