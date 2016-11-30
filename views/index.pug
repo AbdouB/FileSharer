@@ -1,0 +1,19 @@
+doctype html
+
+html
+  include includes/head.pug
+  
+  body(style={background: 'url(/images/bg.jpg)'})
+    div.container-fluid
+      div.centering
+        div.row-fluid
+          form(method='POST', action='/upload', encType='multipart/form-data')
+            div.col-md-4
+            div.col-md-4
+              label.control-label= 'Upload a file'
+              input.file(type='file', name="uploadedFile")
+            div.col-md-4
+
+    script(src='/js/jquery-3.1.1.min.js')
+    script(src='/js/bootstrap.js')
+    script(src='/js/fileinput.min.js')
