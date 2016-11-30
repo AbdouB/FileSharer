@@ -1,24 +1,33 @@
 var express = require('express')
 var fileUpload = require('express-fileupload')
+var session = require('express-session')
 var path = require('path')
 var chance = require('chance').Chance()
 var fs = require('fs')
 
 var app = express()
 
+app.use(session({secret: '1234567890QWERTY'}));
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.set('views', './views');
 app.set('view engine', 'pug');
 
+var sess;
+
+
 //get index
 app.get('/' , function(req, res){
-
-  if(req.flash('success')){
-    res.render('index', {status: 'Success', message: req.flash('success')})
-  }else if(req.flash('error')){
-    res.render('index', {status: 'Failed', message: req.flash('failed')})
+  sess = req.session;
+  if(sess.status){
+    var status = sess.status;
+    var message = sess.message;
+    sess.status = null;
+    sess.message = null;
+    res.render('index', {status: status, message: message});
+  }else{
+    res.render('index');
   }
 });
 
@@ -38,6 +47,7 @@ app.get('/file/:id', function(req, res){
 
 });
 
+
 //upload file
 app.post('/upload', function(req, res){
 
@@ -48,13 +58,15 @@ app.post('/upload', function(req, res){
 
     var uploadedFile = req.files.uploadedFile;
     var newUploadedFile = chance.hash({length: 15}) + '.' + uploadedFile.name.split('.').pop();
-
+    sess = req.session;
     uploadedFile.mv(path.join(__dirname, 'temp/'+ newUploadedFile), function(err){
         if(err){
-          req.flash('failed', 'Failed uploading please check the file selected')
-          res.redirect('/')
+          sess.status = 'failed';
+          sess.message = 'Failed to upload the file. Please try again.'  ;
+          res.redirect('/');
         }else{
-          req.flash('success', 'File available at: localhost:3000'+newUploadedFile)
+          sess.status = 'success';
+          sess.message = 'File uploaded at: localhost:3000/file/'+newUploadedFile;
           res.redirect('/');
         }
       });
