@@ -38,6 +38,7 @@ app.get('/file/:id', function(req, res){
     if(err == null) {
         res.sendFile(filePath);
     } else if(err.code == 'ENOENT') {
+
         res.status(404).render('404');
     } else {
         res.redirect('back');
