@@ -38,8 +38,7 @@ app.get('/file/:id', function(req, res){
     if(err == null) {
         res.sendFile(filePath);
     } else if(err.code == 'ENOENT') {
-        // file does not exist
-        res.status(404).send('Fichier inexistant');
+        res.status(404).render('404');
     } else {
         res.redirect('back');
     }
@@ -62,7 +61,7 @@ app.post('/upload', function(req, res){
     uploadedFile.mv(path.join(__dirname, 'temp/'+ newUploadedFile), function(err){
         if(err){
           sess.status = 'failed';
-          sess.message = 'Failed to upload the file. Please try again.'  ;
+          sess.message = 'Failed to upload the file. Please try again.';
           res.redirect('/');
         }else{
           sess.status = 'success';
@@ -73,5 +72,7 @@ app.post('/upload', function(req, res){
 
 });
 
-
+app.use('*', function(req, res){
+  res.render('404')
+})
 app.listen(3000);
