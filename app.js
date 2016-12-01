@@ -57,20 +57,28 @@ app.post('/upload', function(req, res){
     }
 
     var uploadedFile = req.files.uploadedFile;
-    var newUploadedFile = chance.hash({length: 15}) + '.' + uploadedFile.name.split('.').pop();
-    sess = req.session;
-    uploadedFile.mv(path.join(__dirname, 'temp/'+ newUploadedFile), function(err){
-        if(err){
-          sess.status = 'failed';
-          sess.message = 'Failed to upload the file. Please try again.';
-          res.redirect('/');
-        }else{
-          sess.status = 'success';
-          sess.message = 'File uploaded at: localhost:3000/file/'+newUploadedFile;
-          res.redirect('/');
-        }
-      });
-
+    var uploadedFileExt = req.files.uploadedFile.name.split('.').pop();
+    var regex = new RegExp("bat|exe|cmd|sh|php|pl|cgi|386|dll|com|torrent|js|"
+                          +"app|jar|pif|vb|vbscript|wsf|asp|cer|csr|jsp|drv|"
+                          +"sys|ade|adp|bas|chm|cpl|crt|csh|fxp|hlp|hta|inf|"
+                          +"ins|isp|jse|htaccess|htpasswd|ksh|lnk|mdb|mde|mdt|"
+                          +"mdw|msc|msi|msp|mst|ops|pcd|prg|reg|scr|sct|shb|shs|"
+                          +"url|vbe|vbs|wsc|wsf|wsh");
+    if(!regex.test(uploadedFileExt)){
+      var newUploadedFile = chance.hash({length: 15}) + '.' + uploadedFileExt;
+      sess = req.session;
+      uploadedFile.mv(path.join(__dirname, 'temp/'+ newUploadedFile), function(err){
+          if(err){
+            sess.status = 'failed';
+            sess.message = 'Failed to upload the file. Please try again.';
+            res.redirect('/');
+          }else{
+            sess.status = 'success';
+            sess.message = 'File uploaded at: localhost:3000/file/'+newUploadedFile;
+            res.redirect('/');
+          }
+        });
+    }
 });
 
 app.use('*', function(req, res){
