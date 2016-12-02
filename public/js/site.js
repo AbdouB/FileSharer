@@ -1,7 +1,24 @@
 $(document).ready(function () {
-    var back = ["#2c3e50", "#c0392b", "#16a085", "#27ae60", "#e74c3c", "#1abc9c"];
-    var rand = back[Math.floor(Math.random() * back.length)];
-    $('body').css('background', rand);
+
+    //getting random space background from NASA APOD api
+    var url = "https://api.nasa.gov/planetary/apod?api_key=7PAW6IOjYXqxRAbNg5H2V4nxvPuG0u0FgtF8sWyA";
+    $.ajax({
+      type: 'GET',
+      url: url,
+      timeout: 3000,
+      success: function(result){
+        $('.bg').css('background', "url('"+result.url+"') no-repeat center center fixed");
+        $('.bg').css('-moz-background-size', 'cover');
+        $('.bg').css('-webkit-background-size', 'cover');
+        $('.bg').css('-o-background-size', 'cover');
+        $('.bg').css('background-size', 'cover');
+      },
+      error: function(){
+        var back = ["#2c3e50", "#c0392b", "#16a085", "#27ae60", "#e74c3c", "#1abc9c"];
+        var rand = back[Math.floor(Math.random() * back.length)];
+        $('body').css('background', rand);
+      }
+    });
 
     //checking if file extention is safe
     $("form").submit(function(event){

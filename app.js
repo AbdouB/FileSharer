@@ -36,9 +36,8 @@ app.get('/file/:id', function(req, res){
   var filePath = path.join(__dirname, 'temp/'+ req.params.id);
   fs.stat(filePath, function(err, stat) {
     if(err == null) {
-        res.sendFile(filePath);
+        res.download(filePath);
     } else if(err.code == 'ENOENT') {
-
         res.status(404).render('404');
     } else {
         res.redirect('back');
