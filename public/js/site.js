@@ -20,19 +20,35 @@ $(document).ready(function () {
       }
     });
 
+    //show Modal after file upload
+    $('#myModal').modal('show');
+
+    //adding input to form when private option is selected
+    $("#optionsPrivacy").change(function(){
+      if( $("#optionsPrivacy input:radio:checked").val() === 'private'){
+        $('#addInputHere').append('<div class="row"><div class="col-md-6 col-xs-6">'+
+        '<input type="text" id="filePassword" class="form-control"'+
+        'name="filePassword" placeholder="Please enter a password"></div></div>');
+      }else{
+          $('#filePassword').remove();
+      }
+    });
+
     //checking if file extention is safe
     $("form").submit(function(event){
       var fileExtension = $('input[type="file"]').val().toLowerCase().split('.').pop();
-      var regex = new RegExp("bat|exe|cmd|sh|php|pl|cgi|386|dll|com|torrent|js|"
-                            +"app|jar|pif|vb|vbscript|wsf|asp|cer|csr|jsp|drv|"
-                            +"sys|ade|adp|bas|chm|cpl|crt|csh|fxp|hlp|hta|inf|"
-                            +"ins|isp|jse|htaccess|htpasswd|ksh|lnk|mdb|mde|mdt|"
-                            +"mdw|msc|msi|msp|mst|ops|pcd|prg|reg|scr|sct|shb|shs|"
-                            +"url|vbe|vbs|wsc|wsf|wsh");
+      var regex = new RegExp("bat|exe|cmd|sh|php|pl|cgi|386|dll|com|torrent|js|"+
+                            "app|jar|pif|vb|vbscript|wsf|asp|cer|csr|jsp|drv|"+
+                            "sys|ade|adp|bas|chm|cpl|crt|csh|fxp|hlp|hta|inf|"+
+                            "ins|isp|jse|htaccess|htpasswd|ksh|lnk|mdb|mde|mdt|"+
+                            "mdw|msc|msi|msp|mst|ops|pcd|prg|reg|scr|sct|shb|shs|"+
+                            "url|vbe|vbs|wsc|wsf|wsh");
       if((regex.test(fileExtension))) {
         $('input[type="file"]').val('');
         alert('Please select a correct file format');
         event.preventDefault();
         }
     });
+
+
 });

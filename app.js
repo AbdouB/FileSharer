@@ -1,86 +1,185 @@
-var express = require('express')
-var fileUpload = require('express-fileupload')
-var session = require('express-session')
-var path = require('path')
-var chance = require('chance').Chance()
-var fs = require('fs')
+var express = require('express'),
+    fileUpload = require('express-fileupload'),
+    session = require('express-session'),
+    path = require('path'),
+    chance = require('chance').Chance(),
+    fs = require('fs'),
+    mongodb = require('mongodb');
 
-var app = express()
+/*
+  To be used later if a solution found for the POST method on /fileOptions
+  var bodyParser = require('body-parser');
+*/
 
-app.use(session({secret: '1234567890QWERTY'}));
+
+var app = express();
+
+//MongoDb variables
+var MongoClient = mongodb.MongoClient;
+var dbUrl = 'mongodb://localhost:27017/filesharer';
+
+app.use(session({
+    secret: '1234567890filesharer'
+}));
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname, 'public')));
+/*
+  To be used later if a solution found for the POST method on /fileOptions
+  app.use(bodyParser());
+*/
+
 
 app.set('views', './views');
 app.set('view engine', 'pug');
 
+fs.stat(path.join(__dirname, 'uploads/'), function(err, stats) {
+    if (err) {
+        if (err.code == 'ENOENT') {
+            fs.mkdir(path.join(__dirname, 'uploads/'), function(err) {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }
+    }
+});
+
+//using session to send download info to index
 var sess;
 
-
 //get index
-app.get('/' , function(req, res){
-  sess = req.session;
-  if(sess.status){
-    var status = sess.status;
-    var message = sess.message;
-    sess.status = null;
-    sess.message = null;
-    res.render('index', {status: status, message: message});
-  }else{
-    res.render('index');
-  }
+app.get('/', function(req, res) {
+    sess = req.session;
+    if (sess.status) {
+        var status = sess.status;
+        var message = sess.message;
+        sess.status = null;
+        sess.message = null;
+        res.render('index', {
+            status: status,
+            message: message
+        });
+    } else {
+        res.render('index');
+    }
 });
 
 //get file
-app.get('/file/:id', function(req, res){
-  var filePath = path.join(__dirname, 'temp/'+ req.params.id);
-  fs.stat(filePath, function(err, stat) {
-    if(err == null) {
-        res.download(filePath);
-    } else if(err.code == 'ENOENT') {
-        res.status(404).render('404');
-    } else {
-        res.redirect('back');
-    }
-  });
+app.get('/file/:id', function(req, res) {
+    var filePath = path.join(__dirname, 'uploads/' + req.params.id);
+    fs.stat(filePath, function(err, stat) {
+        if (err === null) {
+            res.download(filePath);
+        } else if (err.code == 'ENOENT') {
+            res.status(404).render('404');
+        } else {
+            res.redirect('/');
+        }
+    });
 
 });
 
 
 //upload file
-app.post('/upload', function(req, res){
+app.post('/upload', function(req, res) {
 
-    if(!req.files){
-      res.redirect('back');
-      return;
+    if (!req.files) {
+        res.redirect('/');
     }
 
     var uploadedFile = req.files.uploadedFile;
     var uploadedFileExt = req.files.uploadedFile.name.split('.').pop();
-    var regex = new RegExp("bat|exe|cmd|sh|php|pl|cgi|386|dll|com|torrent|js|"
-                          +"app|jar|pif|vb|vbscript|wsf|asp|cer|csr|jsp|drv|"
-                          +"sys|ade|adp|bas|chm|cpl|crt|csh|fxp|hlp|hta|inf|"
-                          +"ins|isp|jse|htaccess|htpasswd|ksh|lnk|mdb|mde|mdt|"
-                          +"mdw|msc|msi|msp|mst|ops|pcd|prg|reg|scr|sct|shb|shs|"
-                          +"url|vbe|vbs|wsc|wsf|wsh");
-    if(!regex.test(uploadedFileExt)){
-      var newUploadedFile = chance.hash({length: 15}) + '.' + uploadedFileExt;
-      sess = req.session;
-      uploadedFile.mv(path.join(__dirname, 'temp/'+ newUploadedFile), function(err){
-          if(err){
-            sess.status = 'failed';
-            sess.message = 'Failed to upload the file. Please try again.';
-            res.redirect('/');
-          }else{
-            sess.status = 'success';
-            sess.message = 'File uploaded at: localhost:3000/file/'+newUploadedFile;
-            res.redirect('/');
-          }
+    var regex = new RegExp("bat|exe|cmd|sh|php|pl|cgi|386|dll|com|torrent|js|" +
+        "app|jar|pif|vb|vbscript|wsf|asp|cer|csr|jsp|drv|" +
+        "sys|ade|adp|bas|chm|cpl|crt|csh|fxp|hlp|hta|inf|" +
+        "ins|isp|jse|htaccess|htpasswd|ksh|lnk|mdb|mde|mdt|" +
+        "mdw|msc|msi|msp|mst|ops|pcd|prg|reg|scr|sct|shb|shs|" +
+        "url|vbe|vbs|wsc|wsf|wsh");
+    if (!regex.test(uploadedFileExt)) {
+        var newUploadedFile = chance.guid() + '.' + uploadedFileExt;
+        sess = req.session;
+        uploadedFile.mv(path.join(__dirname, 'uploads/' + newUploadedFile), function(err) {
+            if (err) {
+                sess.status = 'failed';
+                sess.message = 'Failed to upload the file. Please try again.';
+                res.redirect('/');
+            } else {
+                MongoClient.connect(dbUrl, function(err, db) {
+                    if (err) {
+                        console.log('Unable to connect to the mongoDB server. Error:', err);
+                    } else {
+
+                        console.log('Connection established to', dbUrl);
+                        var collection = db.collection('files');
+                        var file = {
+                            file_id: newUploadedFile,
+                            file_privacy: 'public'
+                        };
+
+                        collection.insert(file, function(err, result) {
+                            if (err) {
+                                sess.status = 'failed';
+                                sess.message = 'Failed to upload the file. Please try again.';
+                                res.redirect('/');
+                            } else {
+                                sess.status = 'success';
+                                sess.message = newUploadedFile;
+                                sess.lastFileId = null;
+                                sess.lastFileId = newUploadedFile;
+                                res.redirect('/');
+                            }
+                            db.close();
+                        });
+                    }
+                });
+            }
         });
     }
 });
 
-app.use('*', function(req, res){
-  res.render('404')
-})
+/*
+  For some odd reason i can't get the POST method to work so i'm using the GET
+  method as an alternative for now (i think it has something to do with the pug
+  templating engine)
+*/
+app.get('/fileOptions', function(req, res) {
+
+    var lastFileId = sess.lastFileId;
+    var filePrivacy = req.query.optionsPrivacy;
+    var filePassWord = req.query.filePassword;
+
+    if (filePrivacy === "private") {
+        MongoClient.connect(dbUrl, function(err, db) {
+            if (err) {
+                console.log('Unable to connect to the mongoDB server. Error:', err);
+            } else {
+                console.log('Connection established to', dbUrl);
+                var collection = db.collection('files');
+                collection.update({
+                    file_id: lastFileId
+                }, {
+                    $set: {
+                        file_privacy: filePrivacy,
+                        file_password: filePassWord
+                    }
+                }, function(err, result) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.log('document inserted');
+                    }
+                    db.close();
+                });
+            }
+        });
+
+        res.redirect('/');
+    } else {
+        res.redirect('/');
+    }
+});
+
+app.use('*', function(req, res) {
+    res.render('404');
+});
 app.listen(3000);
