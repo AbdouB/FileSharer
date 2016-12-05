@@ -1,0 +1,24 @@
+html
+
+  include includes/head.pug
+
+  body
+    div.bg
+    div.container
+      div.row.centered
+        div.col-md-4
+        div.col-md-4
+          <form class="form-private-download" action="/file/private/#{fileId}" method="GET">
+            <h2 class="form-signin-heading">This file is private</h2>
+            <label for="fileId" >File link:</label><br>
+            <p class="form-control-static">localhost:3000/file/#{fileId}</p>
+            <label for="inputPassword" >Password</label>
+            <input type="password" id="inputPassword" name="filePassword" class="form-control" placeholder="Password" autofocus="" required="">
+            <br>
+            <button class="btn btn-success btn-block" type="submit">Download</button>
+          </form>
+        div.col-md-4
+      script(src='/js/jquery-3.1.1.min.js')
+      script(src='/js/bootstrap.js')
+      script(src='/js/fileinput.min.js')
+      script(src='/js/site.js')
