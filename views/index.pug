@@ -4,7 +4,7 @@ html
 
   body
     div.bg
-    div.container-fluid
+    div.container
       if status === 'success'
         <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
           <div class="modal-dialog" role="document">
@@ -51,7 +51,7 @@ html
         </div>
 
       div.centered
-        div.row-fluid
+        div.row
           form(method='POST', action='/upload', encType='multipart/form-data')
             div.col-md-4
             div.col-md-4

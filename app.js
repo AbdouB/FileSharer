@@ -66,17 +66,50 @@ app.get('/', function(req, res) {
 
 //get file
 app.get('/file/:id', function(req, res) {
-    var filePath = path.join(__dirname, 'uploads/' + req.params.id);
-    fs.stat(filePath, function(err, stat) {
-        if (err === null) {
-            res.download(filePath);
-        } else if (err.code == 'ENOENT') {
-            res.status(404).render('404');
-        } else {
-            res.redirect('/');
-        }
-    });
 
+    var fileId = req.params.id;
+    MongoClient.connect(dbUrl, function(err, db) {
+        if (err) {
+            console.log("Unable to connect to database");
+        } else {
+            var collection = db.collection('files');
+
+            collection.find({
+                file_id: fileId
+            }).toArray(function(err, result) {
+                if (err) {
+                    res.status(404).render('404');
+                } else if (result.length) {
+
+                    switch (result[0].file_privacy) {
+
+                        case 'public':
+                            var filePath = path.join(__dirname, 'uploads/' + fileId);
+                            fs.stat(filePath, function(err, stat) {
+                                if (err === null) {
+                                    res.download(filePath);
+                                } else if (err.code == 'ENOENT') {
+                                    res.status(404).render('404');
+                                } else {
+                                    res.redirect('/');
+                                }
+                            });
+                            break;
+
+                        case 'private':
+                            res.render('privateFile', {
+                                fileId: fileId
+                            });
+                            break;
+                    }
+
+                } else {
+                    res.status(404).render('404');
+                }
+            });
+        }
+        db.close();
+    });
 });
 
 
@@ -179,6 +212,47 @@ app.get('/fileOptions', function(req, res) {
     }
 });
 
+
+//Handle private file download
+app.get('/file/private/:id', function(req, res) {
+
+    var fileId = req.params.id;
+    var filePassword = req.query.filePassword;
+
+    MongoClient.connect(dbUrl, function(err, db) {
+
+        var collection = db.collection('files');
+
+        collection.find({
+            $and: [{
+                file_id: fileId
+            }, {
+                file_password: filePassword
+            }]
+        }).toArray(function(err, result) {
+            if (err) {
+                res.redirect('back');
+            } else if (result.length) {
+
+                var filePath = path.join(__dirname, 'uploads/' + fileId);
+                fs.stat(filePath, function(err, stat) {
+                    if (err === null) {
+                        res.download(filePath);
+                    } else if (err.code == 'ENOENT') {
+                        res.status(404).render('404');
+                    } else {
+                        res.redirect('/');
+                    }
+                });
+
+            } else {
+                res.status(403).redirect('back');
+            }
+        });
+
+        db.close();
+    });
+});
 app.use('*', function(req, res) {
     res.render('404');
 });
