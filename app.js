@@ -4,6 +4,7 @@ var express = require('express'),
     path = require('path'),
     chance = require('chance').Chance(),
     fs = require('fs'),
+    SHA256 = require('js-sha256'),
     mongodb = require('mongodb');
 
 /*
@@ -32,10 +33,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', './views');
 app.set('view engine', 'pug');
 
-fs.stat(path.join(__dirname, 'uploads/'), function(err, stats) {
+fs.stat(path.join(__dirname, 'uploads/'), function (err, stats) {
     if (err) {
         if (err.code == 'ENOENT') {
-            fs.mkdir(path.join(__dirname, 'uploads/'), function(err) {
+            fs.mkdir(path.join(__dirname, 'uploads/'), function (err) {
                 if (err) {
                     console.error(err);
                 }
@@ -48,7 +49,7 @@ fs.stat(path.join(__dirname, 'uploads/'), function(err, stats) {
 var sess;
 
 //get index
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
     sess = req.session;
     if (sess.status) {
         var status = sess.status;
@@ -65,10 +66,10 @@ app.get('/', function(req, res) {
 });
 
 //get file
-app.get('/file/:id', function(req, res) {
+app.get('/file/:id', function (req, res) {
 
     var fileId = req.params.id;
-    MongoClient.connect(dbUrl, function(err, db) {
+    MongoClient.connect(dbUrl, function (err, db) {
         if (err) {
             console.log("Unable to connect to database");
         } else {
@@ -76,7 +77,7 @@ app.get('/file/:id', function(req, res) {
 
             collection.find({
                 file_id: fileId
-            }).toArray(function(err, result) {
+            }).toArray(function (err, result) {
                 if (err) {
                     res.status(404).render('404');
                 } else if (result.length) {
@@ -85,7 +86,7 @@ app.get('/file/:id', function(req, res) {
 
                         case 'public':
                             var filePath = path.join(__dirname, 'uploads/' + fileId);
-                            fs.stat(filePath, function(err, stat) {
+                            fs.stat(filePath, function (err, stat) {
                                 if (err === null) {
                                     res.download(filePath);
                                 } else if (err.code == 'ENOENT') {
@@ -114,7 +115,7 @@ app.get('/file/:id', function(req, res) {
 
 
 //upload file
-app.post('/upload', function(req, res) {
+app.post('/upload', function (req, res) {
 
     if (!req.files) {
         res.redirect('/');
@@ -131,13 +132,13 @@ app.post('/upload', function(req, res) {
     if (!regex.test(uploadedFileExt)) {
         var newUploadedFile = chance.guid() + '.' + uploadedFileExt;
         sess = req.session;
-        uploadedFile.mv(path.join(__dirname, 'uploads/' + newUploadedFile), function(err) {
+        uploadedFile.mv(path.join(__dirname, 'uploads/' + newUploadedFile), function (err) {
             if (err) {
                 sess.status = 'failed';
                 sess.message = 'Failed to upload the file. Please try again.';
                 res.redirect('/');
             } else {
-                MongoClient.connect(dbUrl, function(err, db) {
+                MongoClient.connect(dbUrl, function (err, db) {
                     if (err) {
                         console.log('Unable to connect to the mongoDB server. Error:', err);
                     } else {
@@ -149,7 +150,7 @@ app.post('/upload', function(req, res) {
                             file_privacy: 'public'
                         };
 
-                        collection.insert(file, function(err, result) {
+                        collection.insert(file, function (err, result) {
                             if (err) {
                                 sess.status = 'failed';
                                 sess.message = 'Failed to upload the file. Please try again.';
@@ -175,14 +176,15 @@ app.post('/upload', function(req, res) {
   method as an alternative for now (i think it has something to do with the pug
   templating engine)
 */
-app.get('/fileOptions', function(req, res) {
+app.get('/fileOptions', function (req, res) {
 
     var lastFileId = sess.lastFileId;
     var filePrivacy = req.query.optionsPrivacy;
-    var filePassWord = req.query.filePassword;
+    var filePassWord = SHA256(req.query.filePassword);
 
     if (filePrivacy === "private") {
-        MongoClient.connect(dbUrl, function(err, db) {
+
+        MongoClient.connect(dbUrl, function (err, db) {
             if (err) {
                 console.log('Unable to connect to the mongoDB server. Error:', err);
             } else {
@@ -195,7 +197,7 @@ app.get('/fileOptions', function(req, res) {
                         file_privacy: filePrivacy,
                         file_password: filePassWord
                     }
-                }, function(err, result) {
+                }, function (err, result) {
                     if (err) {
                         console.log(err);
                     } else {
@@ -204,6 +206,7 @@ app.get('/fileOptions', function(req, res) {
                     db.close();
                 });
             }
+
         });
 
         res.redirect('/');
@@ -214,12 +217,12 @@ app.get('/fileOptions', function(req, res) {
 
 
 //Handle private file download
-app.get('/file/private/:id', function(req, res) {
+app.get('/file/private/:id', function (req, res) {
 
     var fileId = req.params.id;
-    var filePassword = req.query.filePassword;
+    var filePassword = SHA256(req.query.filePassword);
 
-    MongoClient.connect(dbUrl, function(err, db) {
+    MongoClient.connect(dbUrl, function (err, db) {
 
         var collection = db.collection('files');
 
@@ -229,13 +232,13 @@ app.get('/file/private/:id', function(req, res) {
             }, {
                 file_password: filePassword
             }]
-        }).toArray(function(err, result) {
+        }).toArray(function (err, result) {
             if (err) {
                 res.redirect('back');
             } else if (result.length) {
 
                 var filePath = path.join(__dirname, 'uploads/' + fileId);
-                fs.stat(filePath, function(err, stat) {
+                fs.stat(filePath, function (err, stat) {
                     if (err === null) {
                         res.download(filePath);
                     } else if (err.code == 'ENOENT') {
@@ -253,7 +256,7 @@ app.get('/file/private/:id', function(req, res) {
         db.close();
     });
 });
-app.use('*', function(req, res) {
+app.use('*', function (req, res) {
     res.render('404');
 });
 app.listen(3000);

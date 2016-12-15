@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
 
     //getting random space background from NASA APOD api
     /*
@@ -27,7 +27,7 @@ $(document).ready(function() {
     $('#myModal').modal('show');
 
     //adding input to form when private option is selected
-    $("#optionsPrivacy").change(function() {
+    $("#optionsPrivacy").change(function () {
         if ($("#optionsPrivacy input:radio:checked").val() === 'private') {
             $('#addInputHere').append('<div class="row"><div class="col-md-6 col-xs-6">' +
                 '<input type="text" id="filePassword" class="form-control"' +
@@ -37,8 +37,18 @@ $(document).ready(function() {
         }
     });
 
+    //checking if password field is empty
+    $("#optionsForm").submit(function (event) {
+        if ($("#filePassword").length) {
+            if ($('#filePassword').val() === '') {
+                $("#addInputHere").addClass('has-error');
+                event.preventDefault();
+            }
+        }
+    });
+
     //checking if file extention is safe
-    $("form").submit(function(event) {
+    $("form").submit(function (event) {
         var fileExtension = $('input[type="file"]').val().toLowerCase().split('.').pop();
         var regex = new RegExp("bat|exe|cmd|sh|php|pl|cgi|386|dll|com|torrent|js|" +
             "app|jar|pif|vb|vbscript|wsf|asp|cer|csr|jsp|drv|" +
