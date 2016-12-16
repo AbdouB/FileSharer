@@ -1,0 +1,33 @@
+body {
+    font-family: 'Raleway', sans-serif;
+}
+
+.bg {
+    background: url('/images/bg.png') no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.centered {
+    float: none;
+    margin-top: 20%;
+}
+
+.bottom {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    text-align: center;
+}
+
+#myModal {
+    color: black;
+}

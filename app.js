@@ -182,7 +182,7 @@ app.get('/fileOptions', function (req, res) {
     var filePrivacy = req.query.optionsPrivacy;
     var filePassWord = SHA256(req.query.filePassword);
 
-    if (filePrivacy === "private") {
+    if (filePrivacy === "private" && !filePassWord === null) {
 
         MongoClient.connect(dbUrl, function (err, db) {
             if (err) {
