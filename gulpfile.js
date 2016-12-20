@@ -7,7 +7,9 @@ gulp.task('server', function (cb) {
     nodemon({
         script: 'app.js',
         ext: 'js html',
-        env: { 'NODE_ENV': 'development' }
+        env: {
+            'NODE_ENV': 'development'
+        }
     });
     exec('mongod.exe', function (err, stdout, stderr) {
         console.log(stdout);
